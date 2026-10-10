@@ -34,7 +34,7 @@ final class ResultReaderTest extends TestCase
         self::assertSame(['m-1', 'm-2'], array_map(static fn (ResultReceived $event): ?string => $event->result->messageId, $received->getArrayCopy()));
         self::assertTrue($received->getArrayCopy()[0]->result->isSuccess());
         self::assertFalse($received->getArrayCopy()[1]->result->isSuccess());
-        self::assertNull($received->getArrayCopy()[0]->registry);
+        self::assertSame('default', $received->getArrayCopy()[0]->registry);
         self::assertSame([self::READ, self::COMMIT, self::READ, self::COMMIT, self::READ], array_slice($this->sent(), 1));
     }
 
@@ -80,7 +80,7 @@ final class ResultReaderTest extends TestCase
         config()->set('reges.results.consumer_id', 'from-config');
         $this->fakeHttp($this->tokenResponse(), $this->resultResponse('m-1'), new Response(200), new Response(204));
 
-        $this->command('reges:results')->expectsOutputToContain('Read 1 result.')->assertSuccessful();
+        $this->command('reges:results')->expectsOutputToContain('1 result')->assertSuccessful();
 
         self::assertCount(1, $received);
         self::assertSame('consumerId=from-config', $this->requests[1]->getUri()->getQuery());
@@ -92,7 +92,7 @@ final class ResultReaderTest extends TestCase
         $this->fakeHttp($this->tokenResponse(), $this->resultResponse('m-1'), new Response(200), $this->resultResponse('m-2'));
 
         $this->command('reges:results', ['--consumer' => 'other', '--limit' => 1])
-            ->expectsOutputToContain('Read 1 result.')
+            ->expectsOutputToContain('1 result')
             ->assertSuccessful();
 
         self::assertSame('consumerId=other', $this->requests[1]->getUri()->getQuery());

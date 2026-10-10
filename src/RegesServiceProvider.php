@@ -8,6 +8,7 @@ use GuzzleHttp\Client;
 use Illuminate\Contracts\Cache\Factory as CacheFactory;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Contracts\Encryption\Encrypter;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Log\LogManager;
 use Illuminate\Support\ServiceProvider;
@@ -15,11 +16,14 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Log\LoggerInterface;
 use slash197\Reges\Auth\TokenStore;
 use slash197\Reges\Config;
-use slash197\Reges\Credentials;
 use slash197\Reges\Environment;
 use slash197\Reges\Laravel\Console\CheckCommand;
 use slash197\Reges\Laravel\Console\NomenclatorsCommand;
 use slash197\Reges\Laravel\Console\ResultsCommand;
+use slash197\Reges\Laravel\Console\SendCommand;
+use slash197\Reges\Laravel\Events\ResultReceived;
+use slash197\Reges\Laravel\Outbox\Outbox;
+use slash197\Reges\Laravel\Outbox\RecordResult;
 use slash197\Reges\Reges;
 use slash197\Reges\Validation\NomenclatorLookup;
 
@@ -87,21 +91,39 @@ final class RegesServiceProvider extends ServiceProvider
             );
         });
 
-        $this->app->singleton(Reges::class, function (Application $app): Reges {
-            $config = $app->make(ConfigRepository::class);
+        $this->app->singletonIf(CredentialsProvider::class, ConfigCredentialsProvider::class);
 
-            return $app->make(RegesFactory::class)->make(
-                new Credentials(self::string($config, 'username'), self::string($config, 'password')),
-            );
+        $this->app->scoped(Registries::class);
+
+        $this->app->bind(Reges::class, static fn (Application $app): Reges => $app->make(Registries::class)->client());
+
+        $this->app->bind(Outbox::class, static function (Application $app): Outbox {
+            return new Outbox($app->make(Registries::class), $app->make(CacheFactory::class)->store());
         });
     }
 
     public function boot(): void
     {
-        if ($this->app->runningInConsole()) {
-            $this->publishes([__DIR__ . '/../config/reges.php' => $this->app->configPath('reges.php')], 'reges-config');
+        $outbox = (bool) $this->app->make(ConfigRepository::class)->get('reges.outbox.enabled');
 
-            $this->commands([CheckCommand::class, NomenclatorsCommand::class, ResultsCommand::class]);
+        if ($outbox) {
+            $this->app->make(Dispatcher::class)->listen(ResultReceived::class, RecordResult::class);
+        }
+
+        if (!$this->app->runningInConsole()) {
+            return;
+        }
+
+        $this->publishes([__DIR__ . '/../config/reges.php' => $this->app->configPath('reges.php')], 'reges-config');
+        $this->commands([CheckCommand::class, NomenclatorsCommand::class, ResultsCommand::class]);
+
+        if ($outbox) {
+            $this->commands([SendCommand::class]);
+            $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+            $this->publishes(
+                [__DIR__ . '/../database/migrations' => $this->app->databasePath('migrations')],
+                'reges-migrations',
+            );
         }
     }
 

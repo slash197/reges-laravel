@@ -24,13 +24,13 @@ final class ResultReader
      * is committed only after its listeners returned, so a listener that
      * throws stops the read and leaves that result at the head of the queue.
      *
-     * @param string|null $registry   Passed on in the event, for applications reading several registries
+     * @param string      $registry   The key of the registry, passed on in the event
      * @param string|null $consumerId Reads the queue as a separate consumer, see Reges::results()
      * @param int|null    $limit      Most results to read in this call; null reads until the queue is empty
      *
      * @return int Number of results read and committed
      */
-    public function drain(Reges $reges, ?string $registry = null, ?string $consumerId = null, ?int $limit = null): int
+    public function drain(Reges $reges, string $registry = Registries::DEFAULT, ?string $consumerId = null, ?int $limit = null): int
     {
         $results = $reges->results($consumerId);
         $read = 0;

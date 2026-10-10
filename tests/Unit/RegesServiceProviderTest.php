@@ -30,7 +30,7 @@ final class RegesServiceProviderTest extends TestCase
         self::assertSame('reges-api', $config->clientId);
         self::assertSame('Payroll', $config->clientApplication);
         self::assertSame('2.3', $config->clientVersion);
-        self::assertNull($config->user);
+        self::assertSame('Maria Ionescu', $config->user);
         self::assertSame(Environment::Test->apiUrl(), $config->apiUrl);
     }
 
@@ -57,14 +57,14 @@ final class RegesServiceProviderTest extends TestCase
         $profile = $this->app()->make(Reges::class)->profile();
 
         self::assertSame('a-1', $profile->angajatorId);
-        self::assertStringContainsString('username=key-user', (string) $this->requests[0]->getBody());
+        self::assertStringContainsString('username=' . self::USERNAME, (string) $this->requests[0]->getBody());
         self::assertSame('Bearer token-1', $this->requests[1]->getHeaderLine('Authorization'));
 
         // A second client for the same credentials reuses the cached token: no token request is queued
         $this->fakeHttp($this->profileResponse('a-1'));
         $this->app()->forgetInstance(RegesFactory::class);
 
-        $this->app()->make(RegesFactory::class)->make(new Credentials('key-user', 'key-password'))->profile();
+        $this->app()->make(RegesFactory::class)->make(new Credentials(self::USERNAME, 'key-password'))->profile();
 
         self::assertSame('Bearer token-1', $this->requests[2]->getHeaderLine('Authorization'));
     }

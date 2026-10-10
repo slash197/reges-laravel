@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace slash197\Reges\Laravel\Events;
 
+use slash197\Reges\Laravel\Registries;
 use slash197\Reges\Results\Result;
 
 /**
@@ -14,12 +15,11 @@ use slash197\Reges\Results\Result;
 final readonly class ResultReceived
 {
     /**
-     * @param string|null $registry The label the application gave the registry when reading its queue;
-     *                              null for the client bound in the container
+     * @param string $registry The key of the registry whose queue the result came from
      */
     public function __construct(
         public Result $result,
-        public ?string $registry = null,
+        public string $registry = Registries::DEFAULT,
     ) {
     }
 }
