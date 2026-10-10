@@ -34,6 +34,20 @@ return [
         'prefix' => 'reges:token:',
     ],
 
+    // Local copy of the nomenclators, filled by reges:nomenclators. Use a store
+    // that cache:clear does not empty if validation must not lapse.
+    'nomenclators' => [
+        'store' => env('REGES_NOMENCLATOR_CACHE_STORE', env('REGES_CACHE_STORE')),
+        'prefix' => 'reges:nomenclator:',
+    ],
+
+    // How reges:results reads the result queue. Applications sharing one
+    // registry each need their own consumer id.
+    'results' => [
+        'consumer_id' => env('REGES_CONSUMER_ID'),
+        'limit' => 500,
+    ],
+
     // Receives request metadata, never message contents; null is the default channel
     'log_channel' => env('REGES_LOG_CHANNEL'),
 

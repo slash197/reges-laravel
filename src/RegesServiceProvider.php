@@ -17,6 +17,9 @@ use slash197\Reges\Auth\TokenStore;
 use slash197\Reges\Config;
 use slash197\Reges\Credentials;
 use slash197\Reges\Environment;
+use slash197\Reges\Laravel\Console\CheckCommand;
+use slash197\Reges\Laravel\Console\NomenclatorsCommand;
+use slash197\Reges\Laravel\Console\ResultsCommand;
 use slash197\Reges\Reges;
 use slash197\Reges\Validation\NomenclatorLookup;
 
@@ -53,6 +56,17 @@ final class RegesServiceProvider extends ServiceProvider
             );
         });
 
+        $this->app->singleton(CacheNomenclatorLookup::class, function (Application $app): CacheNomenclatorLookup {
+            $config = $app->make(ConfigRepository::class);
+
+            return new CacheNomenclatorLookup(
+                $app->make(CacheFactory::class)->store(self::string($config, 'nomenclators.store') ?: null),
+                self::string($config, 'nomenclators.prefix'),
+            );
+        });
+
+        $this->app->bindIf(NomenclatorLookup::class, CacheNomenclatorLookup::class);
+
         $this->app->singleton(RegesFactory::class, function (Application $app): RegesFactory {
             $config = $app->make(ConfigRepository::class);
             $channel = self::string($config, 'log_channel');
@@ -69,7 +83,7 @@ final class RegesServiceProvider extends ServiceProvider
                 $channel !== ''
                     ? $app->make(LogManager::class)->channel($channel)
                     : $app->make(LoggerInterface::class),
-                $app->bound(NomenclatorLookup::class) ? $app->make(NomenclatorLookup::class) : null,
+                $app->make(NomenclatorLookup::class),
             );
         });
 
@@ -86,6 +100,8 @@ final class RegesServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->publishes([__DIR__ . '/../config/reges.php' => $this->app->configPath('reges.php')], 'reges-config');
+
+            $this->commands([CheckCommand::class, NomenclatorsCommand::class, ResultsCommand::class]);
         }
     }
 

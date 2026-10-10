@@ -2,6 +2,15 @@
 
 All notable changes to this package are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). While the version is 0.x, a minor release may contain breaking changes.
 
+## [Unreleased]
+
+### Added
+
+- `reges:results` and `ResultReader`, which read a registry's result queue and dispatch a `ResultReceived` event for each result, committing it only after its listeners returned.
+- `reges:nomenclators` and `CacheNomenclatorLookup`, a local copy of the nomenclators that every client now validates against once it has been downloaded.
+- `reges:check`, which verifies the configuration with read-only calls.
+- A `Reges` facade for the container-bound client.
+
 ## [0.1.0] - 2026-10-10
 
 First release.

@@ -4,30 +4,21 @@ declare(strict_types=1);
 
 namespace slash197\Reges\Laravel\Tests\Unit;
 
-use GuzzleHttp\Client;
-use GuzzleHttp\Handler\MockHandler;
-use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Middleware;
-use GuzzleHttp\Psr7\Response;
 use Illuminate\Cache\ArrayStore;
 use Illuminate\Contracts\Cache\Factory as CacheFactory;
-use Psr\Http\Client\ClientInterface;
-use Psr\Http\Message\RequestInterface;
 use slash197\Reges\Auth\InMemoryTokenStore;
 use slash197\Reges\Auth\TokenStore;
 use slash197\Reges\Config;
 use slash197\Reges\Credentials;
 use slash197\Reges\Environment;
 use slash197\Reges\Laravel\CacheTokenStore;
+use slash197\Reges\Laravel\Facades\Reges as RegesFacade;
 use slash197\Reges\Laravel\RegesFactory;
 use slash197\Reges\Laravel\Tests\TestCase;
 use slash197\Reges\Reges;
 
 final class RegesServiceProviderTest extends TestCase
 {
-    /** @var list<RequestInterface> */
-    private array $requests = [];
-
     public function testBuildsTheConfigFromTheApplicationConfig(): void
     {
         config()->set('reges.client_application', ' Payroll ');
@@ -56,6 +47,7 @@ final class RegesServiceProviderTest extends TestCase
     {
         self::assertInstanceOf(CacheTokenStore::class, $this->app()->make(TokenStore::class));
         self::assertSame($this->app()->make(Reges::class), $this->app()->make(Reges::class));
+        self::assertSame($this->app()->make(Reges::class), RegesFacade::getFacadeRoot());
     }
 
     public function testTheBoundClientAuthenticatesWithTheConfiguredCredentialsAndCachesTheToken(): void
@@ -92,31 +84,5 @@ final class RegesServiceProviderTest extends TestCase
         $cache = $this->app()->make(CacheFactory::class)->store()->getStore();
         self::assertInstanceOf(ArrayStore::class, $cache);
         self::assertSame([], $cache->all(false));
-    }
-
-    private function fakeHttp(Response ...$responses): void
-    {
-        $stack = HandlerStack::create(new MockHandler(array_values($responses)));
-        $stack->push(Middleware::tap(function (RequestInterface $request): void {
-            $this->requests[] = $request;
-        }));
-
-        $this->app()->instance(ClientInterface::class, new Client(['handler' => $stack]));
-    }
-
-    private function tokenResponse(string $accessToken): Response
-    {
-        return new Response(200, ['Content-Type' => 'application/json'], (string) json_encode([
-            'access_token' => $accessToken,
-            'expires_in' => 300,
-            'token_type' => 'Bearer',
-        ]));
-    }
-
-    private function profileResponse(string $angajatorId): Response
-    {
-        return new Response(200, ['Content-Type' => 'application/json'], (string) json_encode([
-            'referintaAngajator' => ['id' => $angajatorId],
-        ]));
     }
 }
