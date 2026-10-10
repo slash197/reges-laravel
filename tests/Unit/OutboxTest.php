@@ -213,6 +213,11 @@ final class OutboxTest extends TestCase
 
         self::assertSame(MessageStatus::Rejected, $queued->refresh()->status);
         self::assertSame('CNP deja inregistrat', $queued->error);
+        self::assertSame('CNP deja inregistrat', $queued->result_description);
+
+        $stored = (array) DB::table('reges_messages')->first();
+        self::assertStringNotContainsString('CNP', (string) $stored['error']);
+        self::assertStringNotContainsString('CNP', (string) $stored['result_description']);
         Event::assertDispatched(MessageRejected::class, static fn (MessageRejected $event): bool => $event->result !== null);
     }
 

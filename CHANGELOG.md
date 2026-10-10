@@ -2,6 +2,13 @@
 
 All notable changes to this package are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). While the version is 0.x, a minor release may contain breaking changes.
 
+## [Unreleased]
+
+### Changed
+
+- The outbox now encrypts `error` and `result_description` as well as the message body, because what REGES answers quotes names and CNPs. Rows written by 0.2.0 hold these two columns in plain text and cannot be read back through the model; clear the columns or the rows when upgrading.
+- The README covers the whole package: a quick start, the life of a stored message, retries, testing and troubleshooting.
+
 ## [0.2.0] - 2026-10-10
 
 ### Added

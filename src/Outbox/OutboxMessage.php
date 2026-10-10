@@ -28,9 +28,9 @@ use slash197\Reges\Envelope;
  * @property Carbon|null               $sent_at
  * @property Carbon|null               $resolved_at
  * @property string|null               $response_id
- * @property string|null               $error              Why the last attempt failed or the message was refused
+ * @property string|null               $error              Why the last attempt failed or the message was refused, encrypted at rest
  * @property string|null               $result_code
- * @property string|null               $result_description
+ * @property string|null               $result_description What REGES said about the outcome, encrypted at rest
  * @property string|null               $ref                Id of what the operation created, see Result::$ref
  * @property string|null               $sec_ref
  * @property Carbon|null               $created_at
@@ -87,6 +87,9 @@ class OutboxMessage extends Model
         return [
             'status' => MessageStatus::class,
             'payload' => 'encrypted',
+            // What REGES answers quotes names and CNPs back
+            'error' => 'encrypted',
+            'result_description' => 'encrypted',
             'meta' => 'array',
             'attempts' => 'integer',
             'next_attempt_at' => 'datetime',
